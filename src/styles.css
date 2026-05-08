@@ -11,7 +11,7 @@ body.dark {
 }
 
 .container {
-  max-width: 900px;
+  max-width: 1200px;
   margin: auto;
   padding: 20px;
 }
@@ -21,6 +21,12 @@ body.dark {
   justify-content: space-between;
   align-items: center;
   gap: 20px;
+  flex-wrap: wrap;
+}
+
+.headerButtons {
+  display: flex;
+  gap: 10px;
 }
 
 .card {
@@ -40,25 +46,45 @@ body.dark .card {
   gap: 12px;
 }
 
+.kanbanBoard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.kanbanColumn {
+  background: rgba(0,0,0,0.05);
+  border-radius: 12px;
+  padding: 12px;
+  min-height: 220px;
+}
+
+body.dark .kanbanColumn {
+  background: rgba(255,255,255,0.08);
+}
+
 .linkCard,
 .companyCard {
   text-decoration: none;
-  padding: 16px;
+  padding: 14px;
   border-radius: 10px;
   border: 1px solid #ddd;
   color: inherit;
+  background: white;
+  margin-bottom: 10px;
+  cursor: grab;
 }
 
-.companyList {
+body.dark .companyCard,
+body.dark .linkCard {
+  background: #374151;
+}
+
+.templateList {
   display: grid;
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.companyCard {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  gap: 14px;
+  margin-top: 20px;
 }
 
 textarea,
@@ -69,6 +95,7 @@ select {
   box-sizing: border-box;
   border-radius: 8px;
   border: 1px solid #ccc;
+  margin-bottom: 12px;
 }
 
 .taskInput {
