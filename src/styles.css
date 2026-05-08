@@ -1,0 +1,59 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background: #f5f7fb;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
+}
+
+.card {
+  background: white;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.linkCard {
+  text-decoration: none;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  color: black;
+  text-align: center;
+}
+
+textarea {
+  width: 100%;
+  min-height: 180px;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.taskInput {
+  display: flex;
+  gap: 10px;
+}
+
+.taskInput input {
+  flex: 1;
+  padding: 10px;
+}
+
+button {
+  padding: 10px 16px;
+}
+
+.done {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
