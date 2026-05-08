@@ -1,0 +1,9 @@
+{
+  "name": "就活Hub",
+  "short_name": "就活Hub",
+  "start_url": "/job-hub-site/",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#111827",
+  "icons": []
+}
