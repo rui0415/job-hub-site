@@ -2,12 +2,25 @@ body {
   margin: 0;
   font-family: sans-serif;
   background: #f5f7fb;
+  color: #111;
+}
+
+body.dark {
+  background: #111827;
+  color: white;
 }
 
 .container {
   max-width: 900px;
   margin: auto;
   padding: 20px;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
 }
 
 .card {
@@ -17,26 +30,45 @@ body {
   margin-bottom: 20px;
 }
 
+body.dark .card {
+  background: #1f2937;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 12px;
 }
 
-.linkCard {
+.linkCard,
+.companyCard {
   text-decoration: none;
   padding: 16px;
   border-radius: 10px;
   border: 1px solid #ddd;
-  color: black;
-  text-align: center;
+  color: inherit;
 }
 
-textarea {
+.companyList {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.companyCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+textarea,
+input,
+select {
   width: 100%;
-  min-height: 180px;
   padding: 12px;
   box-sizing: border-box;
+  border-radius: 8px;
+  border: 1px solid #ccc;
 }
 
 .taskInput {
@@ -44,13 +76,11 @@ textarea {
   gap: 10px;
 }
 
-.taskInput input {
-  flex: 1;
-  padding: 10px;
-}
-
 button {
   padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
 .done {
