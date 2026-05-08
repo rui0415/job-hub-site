@@ -6,23 +6,38 @@ const defaultLinks = [
   { name: 'リクナビ', url: 'https://job.rikunabi.com/' }
 ]
 
+const statuses = ['ES', 'SPI', '一次面接', '最終面接', '内定']
+
 export default function App() {
   const [memo, setMemo] = useState(localStorage.getItem('memo') || '')
-  const [links, setLinks] = useState(
+  const [darkMode, setDarkMode] = useState(localStorage.getItem('darkMode') === 'true')
+  const [companyName, setCompanyName] = useState('')
+  const [companies, setCompanies] = useState(
+    JSON.parse(localStorage.getItem('companies') || '[]')
+  )
+
+  const [links] = useState(
     JSON.parse(localStorage.getItem('links') || JSON.stringify(defaultLinks))
   )
+
   const [tasks, setTasks] = useState(
     JSON.parse(localStorage.getItem('tasks') || '[]')
   )
+
   const [taskInput, setTaskInput] = useState('')
+
+  useEffect(() => {
+    document.body.className = darkMode ? 'dark' : ''
+    localStorage.setItem('darkMode', darkMode)
+  }, [darkMode])
 
   useEffect(() => {
     localStorage.setItem('memo', memo)
   }, [memo])
 
   useEffect(() => {
-    localStorage.setItem('links', JSON.stringify(links))
-  }, [links])
+    localStorage.setItem('companies', JSON.stringify(companies))
+  }, [companies])
 
   useEffect(() => {
     localStorage.setItem('tasks', JSON.stringify(tasks))
@@ -34,18 +49,62 @@ export default function App() {
     setTaskInput('')
   }
 
-  const toggleTask = (idx) => {
-    const updated = [...tasks]
-    updated[idx].done = !updated[idx].done
-    setTasks(updated)
+  const addCompany = () => {
+    if (!companyName.trim()) return
+    setCompanies([...companies, { name: companyName, status: 'ES' }])
+    setCompanyName('')
+  }
+
+  const updateStatus = (idx, status) => {
+    const updated = [...companies]
+    updated[idx].status = status
+    setCompanies(updated)
   }
 
   return (
     <div className="container">
-      <header>
-        <h1>就活Hub</h1>
-        <p>就活用の自分専用ダッシュボード</p>
+      <header className="headerRow">
+        <div>
+          <h1>就活Hub</h1>
+          <p>就活用の自分専用ダッシュボード</p>
+        </div>
+
+        <button onClick={() => setDarkMode(!darkMode)}>
+          {darkMode ? 'ライトモード' : 'ダークモード'}
+        </button>
       </header>
+
+      <section className="card">
+        <h2>企業進捗管理</h2>
+
+        <div className="taskInput">
+          <input
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+            placeholder="企業名を追加"
+          />
+          <button onClick={addCompany}>追加</button>
+        </div>
+
+        <div className="companyList">
+          {companies.map((company, idx) => (
+            <div key={idx} className="companyCard">
+              <strong>{company.name}</strong>
+
+              <select
+                value={company.status}
+                onChange={(e) => updateStatus(idx, e.target.value)}
+              >
+                {statuses.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <section className="card">
         <h2>マイページショートカット</h2>
@@ -69,6 +128,7 @@ export default function App() {
 
       <section className="card">
         <h2>Todo</h2>
+
         <div className="taskInput">
           <input
             value={taskInput}
@@ -85,7 +145,11 @@ export default function App() {
                 <input
                   type="checkbox"
                   checked={task.done}
-                  onChange={() => toggleTask(idx)}
+                  onChange={() => {
+                    const updated = [...tasks]
+                    updated[idx].done = !updated[idx].done
+                    setTasks(updated)
+                  }}
                 />
                 <span className={task.done ? 'done' : ''}>{task.text}</span>
               </label>
