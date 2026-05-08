@@ -8,13 +8,33 @@ const defaultLinks = [
 
 const statuses = ['ES', 'SPI', '一次面接', '最終面接', '内定']
 
+const defaultTemplates = [
+  {
+    title: 'ガクチカ',
+    content: '学生時代に力を入れたことを記入'
+  },
+  {
+    title: '志望動機',
+    content: 'なぜその企業を志望するかを記入'
+  }
+]
+
 export default function App() {
   const [memo, setMemo] = useState(localStorage.getItem('memo') || '')
   const [darkMode, setDarkMode] = useState(localStorage.getItem('darkMode') === 'true')
   const [companyName, setCompanyName] = useState('')
+  const [dragIndex, setDragIndex] = useState(null)
+
   const [companies, setCompanies] = useState(
     JSON.parse(localStorage.getItem('companies') || '[]')
   )
+
+  const [templates, setTemplates] = useState(
+    JSON.parse(localStorage.getItem('templates') || JSON.stringify(defaultTemplates))
+  )
+
+  const [templateTitle, setTemplateTitle] = useState('')
+  const [templateContent, setTemplateContent] = useState('')
 
   const [links] = useState(
     JSON.parse(localStorage.getItem('links') || JSON.stringify(defaultLinks))
@@ -40,6 +60,10 @@ export default function App() {
   }, [companies])
 
   useEffect(() => {
+    localStorage.setItem('templates', JSON.stringify(templates))
+  }, [templates])
+
+  useEffect(() => {
     localStorage.setItem('tasks', JSON.stringify(tasks))
   }, [tasks])
 
@@ -47,6 +71,10 @@ export default function App() {
     if (!taskInput.trim()) return
     setTasks([...tasks, { text: taskInput, done: false }])
     setTaskInput('')
+
+    if (Notification.permission === 'granted') {
+      new Notification('Todoを追加しました')
+    }
   }
 
   const addCompany = () => {
@@ -55,10 +83,31 @@ export default function App() {
     setCompanyName('')
   }
 
-  const updateStatus = (idx, status) => {
+  const moveCompany = (idx, status) => {
     const updated = [...companies]
     updated[idx].status = status
     setCompanies(updated)
+  }
+
+  const addTemplate = () => {
+    if (!templateTitle.trim() || !templateContent.trim()) return
+
+    setTemplates([
+      ...templates,
+      {
+        title: templateTitle,
+        content: templateContent
+      }
+    ])
+
+    setTemplateTitle('')
+    setTemplateContent('')
+  }
+
+  const requestNotification = async () => {
+    if ('Notification' in window) {
+      await Notification.requestPermission()
+    }
   }
 
   return (
@@ -69,13 +118,16 @@ export default function App() {
           <p>就活用の自分専用ダッシュボード</p>
         </div>
 
-        <button onClick={() => setDarkMode(!darkMode)}>
-          {darkMode ? 'ライトモード' : 'ダークモード'}
-        </button>
+        <div className="headerButtons">
+          <button onClick={requestNotification}>通知ON</button>
+          <button onClick={() => setDarkMode(!darkMode)}>
+            {darkMode ? 'ライトモード' : 'ダークモード'}
+          </button>
+        </div>
       </header>
 
       <section className="card">
-        <h2>企業進捗管理</h2>
+        <h2>企業進捗Kanban</h2>
 
         <div className="taskInput">
           <input
@@ -86,21 +138,60 @@ export default function App() {
           <button onClick={addCompany}>追加</button>
         </div>
 
-        <div className="companyList">
-          {companies.map((company, idx) => (
-            <div key={idx} className="companyCard">
-              <strong>{company.name}</strong>
+        <div className="kanbanBoard">
+          {statuses.map((status) => (
+            <div
+              key={status}
+              className="kanbanColumn"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => moveCompany(dragIndex, status)}
+            >
+              <h3>{status}</h3>
 
-              <select
-                value={company.status}
-                onChange={(e) => updateStatus(idx, e.target.value)}
-              >
-                {statuses.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
+              {companies
+                .filter((company) => company.status === status)
+                .map((company, idx) => (
+                  <div
+                    key={idx}
+                    className="companyCard"
+                    draggable
+                    onDragStart={() => {
+                      const originalIndex = companies.findIndex(
+                        (c) => c.name === company.name
+                      )
+                      setDragIndex(originalIndex)
+                    }}
+                  >
+                    {company.name}
+                  </div>
                 ))}
-              </select>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card">
+        <h2>ESテンプレ管理</h2>
+
+        <input
+          value={templateTitle}
+          onChange={(e) => setTemplateTitle(e.target.value)}
+          placeholder="テンプレタイトル"
+        />
+
+        <textarea
+          value={templateContent}
+          onChange={(e) => setTemplateContent(e.target.value)}
+          placeholder="テンプレ内容"
+        />
+
+        <button onClick={addTemplate}>テンプレ追加</button>
+
+        <div className="templateList">
+          {templates.map((template, idx) => (
+            <div key={idx} className="card">
+              <h3>{template.title}</h3>
+              <p>{template.content}</p>
             </div>
           ))}
         </div>
