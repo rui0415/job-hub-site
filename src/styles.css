@@ -96,3 +96,53 @@ body.dark .dock { background: rgba(30,41,59,.75); }
 details { min-width: 0; flex: 1; }
 summary { cursor: pointer; font-weight: 700; }
 .emptyState { opacity: .8; }
+
+/* ── 定型文管理 ── */
+.templateManager { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+
+.templateForm { display: flex; flex-direction: column; gap: 6px; }
+.templateFormRow { display: flex; gap: 6px; }
+.templateTitleInput { flex: 1; }
+.templateTextarea { min-height: 72px; resize: vertical; }
+.templateFormActions { display: flex; gap: 6px; }
+
+.templateFilter { display: flex; flex-wrap: wrap; gap: 6px; }
+.filterChip {
+  background: #e2e8f0; color: #334155;
+  border: none; border-radius: 20px;
+  padding: 4px 12px; font-size: .82rem; cursor: pointer;
+}
+.filterChip.active { background: #2563eb; color: white; }
+body.dark .filterChip { background: #334155; color: #cbd5e1; }
+body.dark .filterChip.active { background: #3b82f6; color: white; }
+
+.templateList { display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; }
+
+.templateCard {
+  background: #f8fafc; border: 1px solid #e2e8f0;
+  border-radius: 12px; padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.templateCard.editing { border-color: #2563eb; }
+body.dark .templateCard { background: #0f172a; border-color: #334155; }
+
+.templateCardHeader { display: flex; align-items: center; gap: 8px; }
+.templateCardTitle { font-size: .95rem; }
+.templateCardBody { margin: 0; font-size: .85rem; opacity: .75; white-space: pre-wrap; word-break: break-all; }
+
+.templateCardActions { display: flex; gap: 6px; }
+.templateCardActions button { padding: 5px 10px; font-size: .8rem; border-radius: 8px; }
+
+.categoryBadge {
+  font-size: .72rem; font-weight: 700;
+  padding: 2px 8px; border-radius: 20px;
+  white-space: nowrap;
+}
+.categoryBadge[data-cat="自己PR"]   { background: #dbeafe; color: #1d4ed8; }
+.categoryBadge[data-cat="志望動機"] { background: #dcfce7; color: #15803d; }
+.categoryBadge[data-cat="ガクチカ"] { background: #fef9c3; color: #854d0e; }
+.categoryBadge[data-cat="その他"]   { background: #f1f5f9; color: #475569; }
+
+.btnSecondary { background: #94a3b8; color: white; }
+.btnCopy { background: #0891b2; color: white; }
+.btnCopy.copied { background: #16a34a; }

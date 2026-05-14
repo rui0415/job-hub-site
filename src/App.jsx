@@ -7,9 +7,11 @@ const defaultLinks = [
 ]
 
 const statuses = ['候補', 'ES', 'SPI', '一次面接', '最終面接', '内定', '見送り']
+const categories = ['自己PR', '志望動機', 'ガクチカ', 'その他']
+
 const defaultTemplates = [
-  { title: 'ガクチカ', content: '学生時代に力を入れたことを記入' },
-  { title: '志望動機', content: 'なぜその企業を志望するかを記入' }
+  { id: crypto.randomUUID(), title: 'ガクチカ', category: 'ガクチカ', content: '学生時代に力を入れたことを記入' },
+  { id: crypto.randomUUID(), title: '志望動機', category: '志望動機', content: 'なぜその企業を志望するかを記入' }
 ]
 
 const load = (key, fallback) => {
@@ -23,13 +25,27 @@ const load = (key, fallback) => {
 export default function App() {
   const [darkMode, setDarkMode] = useState(localStorage.getItem('darkMode') === 'true')
   const [companies, setCompanies] = useState(load('companies', []))
-  const [templates, setTemplates] = useState(load('templates', defaultTemplates))
+  const [templates, setTemplates] = useState(() => {
+    const saved = load('templates', null)
+    if (!saved) return defaultTemplates
+    // 既存データに id・category がなければ補完
+    return saved.map((t) => ({
+      id: t.id || crypto.randomUUID(),
+      category: t.category || 'その他',
+      title: t.title,
+      content: t.content
+    }))
+  })
   const [links] = useState(load('links', defaultLinks))
   const [globalMemo, setGlobalMemo] = useState(localStorage.getItem('memo') || '')
 
   const [companyName, setCompanyName] = useState('')
   const [templateTitle, setTemplateTitle] = useState('')
   const [templateContent, setTemplateContent] = useState('')
+  const [templateCategory, setTemplateCategory] = useState('自己PR')
+  const [editingId, setEditingId] = useState(null)
+  const [copiedId, setCopiedId] = useState(null)
+  const [filterCategory, setFilterCategory] = useState('すべて')
 
   const [currentIndex, setCurrentIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
@@ -60,14 +76,7 @@ export default function App() {
   const addCompany = () => {
     const name = companyName.trim()
     if (!name) return
-    const newCompany = {
-      id: crypto.randomUUID(),
-      name,
-      status: '候補',
-      note: '',
-      tasks: []
-    }
-    setCompanies((prev) => [...prev, newCompany])
+    setCompanies((prev) => [...prev, { id: crypto.randomUUID(), name, status: '候補', note: '', tasks: [] }])
     setCompanyName('')
     setCurrentIndex(companies.length)
     setFlipped(false)
@@ -76,42 +85,82 @@ export default function App() {
   const updateCurrent = (patch) => {
     if (!currentCompany) return
     setCompanies((prev) =>
-      prev.map((company) =>
-        company.id === currentCompany.id ? { ...company, ...patch } : company
-      )
+      prev.map((c) => (c.id === currentCompany.id ? { ...c, ...patch } : c))
     )
   }
 
   const addQuickTask = () => {
     const text = quickTask.trim()
     if (!text || !currentCompany) return
-    updateCurrent({
-      tasks: [...(currentCompany.tasks || []), { id: crypto.randomUUID(), text, done: false }]
-    })
+    updateCurrent({ tasks: [...(currentCompany.tasks || []), { id: crypto.randomUUID(), text, done: false }] })
     setQuickTask('')
   }
 
   const toggleTask = (taskId) => {
     if (!currentCompany) return
     updateCurrent({
-      tasks: (currentCompany.tasks || []).map((task) =>
-        task.id === taskId ? { ...task, done: !task.done } : task
-      )
+      tasks: (currentCompany.tasks || []).map((t) => (t.id === taskId ? { ...t, done: !t.done } : t))
     })
   }
 
   const removeCurrent = () => {
     if (!currentCompany) return
-    setCompanies((prev) => prev.filter((company) => company.id !== currentCompany.id))
+    setCompanies((prev) => prev.filter((c) => c.id !== currentCompany.id))
     setFlipped(false)
   }
 
-  const addTemplate = () => {
+  // テンプレート操作
+  const saveTemplate = () => {
     if (!templateTitle.trim() || !templateContent.trim()) return
-    setTemplates((prev) => [...prev, { title: templateTitle.trim(), content: templateContent.trim() }])
+    if (editingId) {
+      setTemplates((prev) =>
+        prev.map((t) =>
+          t.id === editingId
+            ? { ...t, title: templateTitle.trim(), category: templateCategory, content: templateContent.trim() }
+            : t
+        )
+      )
+      setEditingId(null)
+    } else {
+      setTemplates((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), title: templateTitle.trim(), category: templateCategory, content: templateContent.trim() }
+      ])
+    }
     setTemplateTitle('')
     setTemplateContent('')
+    setTemplateCategory('自己PR')
   }
+
+  const startEdit = (t) => {
+    setEditingId(t.id)
+    setTemplateTitle(t.title)
+    setTemplateCategory(t.category)
+    setTemplateContent(t.content)
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setTemplateTitle('')
+    setTemplateContent('')
+    setTemplateCategory('自己PR')
+  }
+
+  const removeTemplate = (id) => {
+    setTemplates((prev) => prev.filter((t) => t.id !== id))
+    if (editingId === id) cancelEdit()
+  }
+
+  const copyTemplate = (t) => {
+    navigator.clipboard.writeText(t.content).then(() => {
+      setCopiedId(t.id)
+      setTimeout(() => setCopiedId(null), 1500)
+    })
+  }
+
+  const filteredTemplates = filterCategory === 'すべて'
+    ? templates
+    : templates.filter((t) => t.category === filterCategory)
 
   return (
     <div className="appShell">
@@ -124,7 +173,7 @@ export default function App() {
       </header>
 
       <section className="addRow">
-        <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="会社名を追加" />
+        <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="会社名を追加" onKeyDown={(e) => e.key === 'Enter' && addCompany()} />
         <button onClick={addCompany}>追加</button>
       </section>
 
@@ -137,7 +186,7 @@ export default function App() {
               <h2>{currentCompany.name}</h2>
               <label>選考ステータス</label>
               <select value={currentCompany.status} onChange={(e) => updateCurrent({ status: e.target.value })}>
-                {statuses.map((status) => <option key={status}>{status}</option>)}
+                {statuses.map((s) => <option key={s}>{s}</option>)}
               </select>
               <div className="navRow">
                 <button onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}>← 前へ</button>
@@ -154,7 +203,7 @@ export default function App() {
                 placeholder="企業ごとのメモ"
               />
               <div className="taskComposer">
-                <input value={quickTask} onChange={(e) => setQuickTask(e.target.value)} placeholder="やること" />
+                <input value={quickTask} onChange={(e) => setQuickTask(e.target.value)} placeholder="やること" onKeyDown={(e) => e.key === 'Enter' && addQuickTask()} />
                 <button onClick={addQuickTask}>追加</button>
               </div>
               <ul className="taskList">
@@ -178,16 +227,76 @@ export default function App() {
 
       <section className="dock">
         <details>
-          <summary>ESテンプレ</summary>
-          <input value={templateTitle} onChange={(e) => setTemplateTitle(e.target.value)} placeholder="タイトル" />
-          <textarea value={templateContent} onChange={(e) => setTemplateContent(e.target.value)} placeholder="内容" />
-          <button onClick={addTemplate}>テンプレ追加</button>
-          {templates.map((template, idx) => <p key={idx}><strong>{template.title}</strong>: {template.content}</p>)}
+          <summary>定型文管理</summary>
+          <div className="templateManager">
+            {/* 入力フォーム */}
+            <div className="templateForm">
+              <div className="templateFormRow">
+                <input
+                  value={templateTitle}
+                  onChange={(e) => setTemplateTitle(e.target.value)}
+                  placeholder="タイトル（例：IT職向け自己PR）"
+                  className="templateTitleInput"
+                />
+                <select value={templateCategory} onChange={(e) => setTemplateCategory(e.target.value)}>
+                  {categories.map((c) => <option key={c}>{c}</option>)}
+                </select>
+              </div>
+              <textarea
+                value={templateContent}
+                onChange={(e) => setTemplateContent(e.target.value)}
+                placeholder="定型文の内容を入力..."
+                className="templateTextarea"
+              />
+              <div className="templateFormActions">
+                <button onClick={saveTemplate}>{editingId ? '更新' : '追加'}</button>
+                {editingId && <button className="btnSecondary" onClick={cancelEdit}>キャンセル</button>}
+              </div>
+            </div>
+
+            {/* フィルター */}
+            <div className="templateFilter">
+              {['すべて', ...categories].map((c) => (
+                <button
+                  key={c}
+                  className={`filterChip ${filterCategory === c ? 'active' : ''}`}
+                  onClick={() => setFilterCategory(c)}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+
+            {/* テンプレート一覧 */}
+            <div className="templateList">
+              {filteredTemplates.length === 0 && (
+                <p className="emptyState">定型文がありません。</p>
+              )}
+              {filteredTemplates.map((t) => (
+                <div key={t.id} className={`templateCard ${editingId === t.id ? 'editing' : ''}`}>
+                  <div className="templateCardHeader">
+                    <span className="categoryBadge" data-cat={t.category}>{t.category}</span>
+                    <strong className="templateCardTitle">{t.title}</strong>
+                  </div>
+                  <p className="templateCardBody">{t.content}</p>
+                  <div className="templateCardActions">
+                    <button className={`btnCopy ${copiedId === t.id ? 'copied' : ''}`} onClick={() => copyTemplate(t)}>
+                      {copiedId === t.id ? 'コピー済み ✓' : 'コピー'}
+                    </button>
+                    <button className="btnSecondary" onClick={() => startEdit(t)}>編集</button>
+                    <button className="danger" onClick={() => removeTemplate(t.id)}>削除</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </details>
+
         <details>
           <summary>共通メモ</summary>
           <textarea value={globalMemo} onChange={(e) => setGlobalMemo(e.target.value)} placeholder="全体メモ" />
         </details>
+
         <details>
           <summary>リンク</summary>
           <div className="linkRow">{links.map((l) => <a key={l.name} href={l.url} target="_blank" rel="noreferrer">{l.name}</a>)}</div>
